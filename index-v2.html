@@ -3221,8 +3221,8 @@ function showModal(modalId) {
                             const reminderId = `product-${product.id}`;
                             const isCompleted = completedReminders.includes(reminderId);
                             
-                            // 今天标记完成的过期提醒也要显示，明天才会自动清理
-                            if ((daysDiff >= 0 && daysDiff <= settings.reminderDays) || (daysDiff < 0)) {
+                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
+                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'product',
@@ -3248,8 +3248,8 @@ function showModal(modalId) {
                             const isToday = contactDate === today;
                             const isPast = contactDate < today;
                             
-                            // 今天的提醒或所有过期提醒都要显示（已完成的明天才清理）
-                            if (isToday || isPast) {
+                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
+                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'contact',
@@ -3270,8 +3270,8 @@ function showModal(modalId) {
                             const isToday = contactDate === today;
                             const isPast = contactDate < today;
                             
-                            // 今天的提醒或所有过期提醒都要显示（已完成的明天才清理）
-                            if (isToday || isPast) {
+                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
+                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'followup',
@@ -3293,8 +3293,8 @@ function showModal(modalId) {
                     const reminderId = `due-${customer.id}`;
                     const isCompleted = completedReminders.includes(reminderId);
                     
-                    // 所有过期提醒都要显示，今天完成的明天才会清理
-                    if ((daysDiff >= 0 && daysDiff <= 30) || (daysDiff < 0)) {
+                    // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
+                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
                         reminders.push({
                             id: reminderId,
                             type: 'due',
@@ -3342,13 +3342,6 @@ function showModal(modalId) {
                         }
                     });
                 }
-            });
-            
-            // 过滤掉已完成的过期提醒，让它们立即隐藏
-            reminders = reminders.filter(reminder => {
-                // 保留未完成的过期提醒和所有未过期的提醒
-                const isCompleted = completedReminders.includes(reminder.id);
-                return !(isCompleted && reminder.daysLeft < 0);
             });
             
             // 按剩余天数排序，过期未完成的提醒显示在最前面
