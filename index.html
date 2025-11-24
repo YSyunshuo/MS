@@ -3219,8 +3219,8 @@ function showModal(modalId) {
             
             // 过滤已完成提醒列表，只保留今天完成的提醒
             const todayCompletedReminders = completedReminders.filter(reminderId => {
-                // 如果没有完成日期记录或者完成日期是今天，则保留
-                return !completionDates[reminderId] || completionDates[reminderId] === today;
+                // 只保留有完成日期记录且完成日期是今天的提醒
+                return completionDates[reminderId] === today;
             });
             
             // 如果已完成列表发生变化，更新并保存
@@ -4831,7 +4831,7 @@ function showModal(modalId) {
                             const reminderId = `product-${product.id}`;
                             const isCompleted = completedReminders.includes(reminderId);
                             
-                            // 过期的提醒，包括今天完成的
+                            // 过期且未完成的提醒，或者今天完成的过期提醒
                             if (endDate < todayDate && (!isCompleted || (isCompleted && completionDates[reminderId] === today))) {
                                 historical.push({
                                     id: reminderId,
