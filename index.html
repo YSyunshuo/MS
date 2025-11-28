@@ -3321,8 +3321,8 @@ function showModal(modalId) {
                             const isToday = contactDate === today;
                             const isPast = contactDate < today;
                             
-                            // 未完成的今天或过期提醒一直显示，直到完成；已完成的提醒只在当天显示
-                            if ((!isCompleted && (isToday || isPast)) || (isCompleted && completionDates[reminderId] === today)) {
+                            // 只显示今天的未完成提醒和今天完成的提醒
+                            if ((!isCompleted && isToday) || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'contact',
@@ -3344,9 +3344,9 @@ function showModal(modalId) {
                             const isPast = contactDate < today;
                             
                             // 显示条件：
-                            // 1. 未完成的今天或过期提醒
+                            // 1. 未完成的今天提醒
                             // 2. 已完成的今天提醒
-                            if ((!isCompleted && (isToday || isPast)) || (isCompleted && completionDates[reminderId] === today)) {
+                            if ((!isCompleted && isToday) || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'followup',
@@ -3370,8 +3370,8 @@ function showModal(modalId) {
                     const reminderId = `due-${customer.id}`;
                     const isCompleted = completedReminders.includes(reminderId);
                     
-                    // 未完成的当月提醒一直显示，直到完成；已完成的提醒只在当天显示
-                    if ((isCurrentMonth && !isCompleted) || (isCompleted && completionDates[reminderId] === today)) {
+                    // 只显示当月未过期的未完成提醒和今天完成的提醒
+                    if ((isCurrentMonth && !isCompleted && daysDiff >= 0) || (isCompleted && completionDates[reminderId] === today)) {
                         reminders.push({
                             id: reminderId,
                             type: 'due',
@@ -3421,16 +3421,8 @@ function showModal(modalId) {
                 }
             });
             
-            // 按剩余天数排序，过期未完成的提醒显示在最前面
+            // 按剩余天数排序，今天的提醒显示在前面
             reminders.sort((a, b) => {
-                // 首先按是否过期排序，过期的提醒显示在前面
-                if ((a.daysLeft < 0) !== (b.daysLeft < 0)) {
-                    return a.daysLeft < 0 ? -1 : 1;
-                }
-                // 对于都是过期的提醒，按过期时间长短排序，过期时间越长（天数越小）的显示在越前面
-                if (a.daysLeft < 0 && b.daysLeft < 0) {
-                    return a.daysLeft - b.daysLeft;
-                }
                 // 对于都是未过期的提醒，按剩余天数排序
                 if (a.daysLeft !== b.daysLeft) {
                     return a.daysLeft - b.daysLeft;
