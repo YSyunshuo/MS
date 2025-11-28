@@ -3271,15 +3271,21 @@ function showModal(modalId) {
             const completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
             window.completionDates = completionDates; // 保存到全局变量以便在markReminderAsCompleted函数中使用
             
-            // 只保留今天完成的提醒
-            const todayCompletedReminders = completedReminders.filter(reminderId => {
-                return completionDates[reminderId] === today;
+            // 保留所有已完成的提醒
+            // 从localStorage中获取所有已完成的提醒ID
+            const allCompletedReminderIds = Object.keys(completionDates);
+            // 更新completedReminders数组，确保它包含所有已完成的提醒
+            allCompletedReminderIds.forEach(reminderId => {
+                if (!completedReminders.includes(reminderId)) {
+                    completedReminders.push(reminderId);
+                }
             });
-            
-            if (todayCompletedReminders.length !== completedReminders.length) {
-                completedReminders = todayCompletedReminders;
-                saveData();
-            }
+            // 移除已不存在于completionDates中的提醒ID
+            completedReminders = completedReminders.filter(reminderId => {
+                return allCompletedReminderIds.includes(reminderId);
+            });
+            // 保存更新后的completedReminders数组
+            saveData();
             
             customers.forEach(customer => {
                 // 1. 产品到期提醒 - 提前7天提醒
@@ -3514,8 +3520,8 @@ function showModal(modalId) {
                             const reminderId = `product-${product.id}`;
                             const isCompleted = completionDates[reminderId] !== undefined;
                             
-                            // 只显示过期未完成的提醒
-                            if (endDate < todayDate && !isCompleted) {
+                            // 显示过期未完成的提醒，以及今天完成的过期提醒
+                            if (endDate < todayDate && (!isCompleted || (isCompleted && completionDates[reminderId] === today))) {
                                 historical.push({
                                     id: reminderId,
                                     type: 'product',
@@ -3539,8 +3545,8 @@ function showModal(modalId) {
                             const reminderId = `contact-${contact.id}`;
                             const isCompleted = completionDates[reminderId] !== undefined;
                             
-                            // 只显示过期未完成的提醒
-                            if (contactDate < todayDate && !isCompleted) {
+                            // 显示过期未完成的提醒，以及今天完成的过期提醒
+                            if (contactDate < todayDate && (!isCompleted || (isCompleted && completionDates[reminderId] === today))) {
                                 historical.push({
                                     id: reminderId,
                                     type: 'contact',
@@ -3583,8 +3589,8 @@ function showModal(modalId) {
                     const reminderId = `due-${customer.id}`;
                     const isCompleted = completionDates[reminderId] !== undefined;
                             
-                            // 只显示过期未完成的提醒
-                            if (dueDate < todayDate && !isCompleted) {
+                            // 显示过期未完成的提醒，以及今天完成的过期提醒
+                            if (dueDate < todayDate && (!isCompleted || (isCompleted && completionDates[reminderId] === today))) {
                         historical.push({
                             id: reminderId,
                             type: 'due',
@@ -3610,8 +3616,8 @@ function showModal(modalId) {
                         const reminderId = `storage-${record.id}-${date}`;
                         const isCompleted = completionDates[reminderId] !== undefined;
                             
-                            // 只显示过期未完成的提醒
-                            if (pickupDate < todayDate && !isCompleted) {
+                            // 显示过期未完成的提醒，以及今天完成的过期提醒
+                            if (pickupDate < todayDate && (!isCompleted || (isCompleted && completionDates[reminderId] === today))) {
                             historical.push({
                                 id: reminderId,
                                 type: 'storage',
