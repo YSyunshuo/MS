@@ -232,7 +232,7 @@
         </div>
 
         <!-- 提醒和客户管理区域 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 gap-8">
             <!-- 今日提醒 -->
             <div class="space-y-8">
                 <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
@@ -248,36 +248,52 @@
                             </select>
                         </div>
                     </div>
-                    <div id="today-reminders-list" class="space-y-4">
+                    <div id="today-reminders-list" class="space-y-4 max-h-96 overflow-y-auto">
                         <!-- 提醒内容将通过JavaScript动态生成 -->
-                    </div>
-                </div>
-
-                </div>
-            <!-- 当月预产期 -->
-            <div class="space-y-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-gray-900 flex items-center">
-                            <i class="fa fa-calendar text-purple-500 mr-3"></i>当月预产期 <span id="current-month" class="text-sm text-gray-500 ml-2"></span>
-                        </h2>
-                    </div>
-                    <div id="due-date-list" class="space-y-4">
-                        <!-- 预产期内容将通过JavaScript动态生成 -->
                     </div>
                 </div>
             </div>
 
-            <!-- 预计可用时间 -->
-            <div class="space-y-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
-                    <div class="flex items-center justify-between mb-6">
-                        <h2 class="text-xl font-bold text-gray-900 flex items-center">
-                            <i class="fa fa-clock-o text-blue-500 mr-3"></i>预计可用时间
-                        </h2>
+            <!-- 历史提醒、当月预产期、预计可用时间 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 历史提醒 -->
+                <div class="space-y-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <i class="fa fa-clock-o text-gray-500 mr-3"></i>历史提醒
+                            </h2>
+                        </div>
+                        <div id="historical-reminders-list" class="space-y-4 max-h-80 overflow-y-auto">
+                            <!-- 历史提醒内容将通过JavaScript动态生成 -->
+                        </div>
                     </div>
-                    <div id="product-usage-list" class="space-y-4">
-                        <!-- 产品使用时间内容将通过JavaScript动态生成 -->
+                </div>
+                <!-- 当月预产期 -->
+                <div class="space-y-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <i class="fa fa-calendar text-purple-500 mr-3"></i>当月预产期 <span id="current-month" class="text-sm text-gray-500 ml-2"></span>
+                            </h2>
+                        </div>
+                        <div id="due-date-list" class="space-y-4 max-h-80 overflow-y-auto">
+                            <!-- 预产期内容将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 预计可用时间 -->
+                <div class="space-y-8">
+                    <div class="bg-white rounded-xl shadow-lg p-6 card-shadow">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <i class="fa fa-clock-o text-blue-500 mr-3"></i>预计可用时间
+                            </h2>
+                        </div>
+                        <div id="product-usage-list" class="space-y-4 max-h-80 overflow-y-auto">
+                            <!-- 产品使用时间内容将通过JavaScript动态生成 -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -311,7 +327,7 @@
                         </button>
                     </div>
                 </div>
-                <div id="customers-list" class="space-y-4">
+                <div id="customers-list" class="space-y-4 max-h-[calc(100vh-30rem)] overflow-y-auto">
                     <!-- 客户列表将通过JavaScript动态生成 -->
                 </div>
             </div>
@@ -721,7 +737,7 @@
                             </div>
                             <div id="recommended-container" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">每日使用量 *</label>
-                                <input type="number" id="new-nutrition-daily" required min="0.1" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" oninput="calculateEndDate()">
+                                <input type="number" id="new-nutrition-recommended" required min="0.1" step="0.1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" oninput="calculateEndDate()">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">单价(元)</label>
@@ -835,6 +851,48 @@
                         </button>
                         <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
                             保存联系记录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑提醒模态框 -->
+    <div id="edit-reminder-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[10001] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-lg w-full">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900">编辑提醒</h3>
+                    <button onclick="closeModal('edit-reminder-modal')" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form id="edit-reminder-form" onsubmit="saveEditedReminder(event)">
+                    <input type="hidden" id="edit-reminder-id">
+                    <input type="hidden" id="edit-reminder-type">
+                    <input type="hidden" id="edit-reminder-customer-id">
+                    <input type="hidden" id="edit-reminder-related-id">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提醒标题</label>
+                        <input type="text" id="edit-reminder-title" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" readonly>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提醒描述</label>
+                        <textarea id="edit-reminder-description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" readonly></textarea>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提醒日期</label>
+                        <input type="date" id="edit-reminder-date" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <button type="button" onclick="closeModal('edit-reminder-modal')" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            保存修改
                         </button>
                     </div>
                 </form>
@@ -1309,6 +1367,7 @@
             defaultOwner: ''
         };
         let completedReminders = [];
+        let historicalReminders = [];
         let customerToDelete = null;
 
         // 初始化应用
@@ -1326,6 +1385,7 @@
             updateDashboard();
             updateCustomerList();
             updateTodayReminders();
+            updateHistoricalReminders();
             updateDueDateList();
             updateProductUsageList();
             updateStorageManagementList();
@@ -1435,28 +1495,10 @@
                         console.log('已完成提醒加载成功，共', completedReminders.length, '条记录');
                     }
                 }
-                
-                // 加载提醒完成日期记录
-                const savedCompletionDates = localStorage.getItem('motherBabyReminderCompletionDates');
-                if (savedCompletionDates) {
-                    try {
-                        const parsedCompletionDates = JSON.parse(savedCompletionDates);
-                        if (typeof parsedCompletionDates === 'object' && parsedCompletionDates !== null) {
-                            window.completionDates = parsedCompletionDates;
-                            console.log('提醒完成日期记录加载成功');
-                        }
-                    } catch (e) {
-                        console.error('解析提醒完成日期记录失败:', e);
-                        window.completionDates = {};
-                    }
-                } else {
-                    window.completionDates = {};
-                }
             } catch (error) {
                 console.error('加载数据失败:', error);
                 // 重置为默认值
                 settings = { reminderDays: 7, defaultOwner: '' };
-                window.completionDates = {};
                 console.log('发生错误，重置设置为默认值:', settings);
             }
         }
@@ -1496,6 +1538,12 @@
                 localStorage.setItem('motherBabyStorage', JSON.stringify(storageRecords));
                 localStorage.setItem('motherBabySettings', JSON.stringify(settings));
                 localStorage.setItem('motherBabyCompletedReminders', JSON.stringify(completedReminders));
+                
+                // 确保completionDates存在并保存到localStorage
+                if (!window.completionDates) {
+                    window.completionDates = {};
+                }
+                localStorage.setItem('motherBabyReminderCompletionDates', JSON.stringify(window.completionDates));
                 
                 // 验证completedReminders是否保存成功
                 const savedCompletedReminders = localStorage.getItem('motherBabyCompletedReminders');
@@ -2576,6 +2624,8 @@ function showModal(modalId) {
                 document.getElementById('new-nutrition-date').value = new Date().toISOString().split('T')[0];
                 // 显示回访提醒设置
                 document.getElementById('nutrition-reminder-container').classList.remove('hidden');
+                // 初始化显示正确的用量输入字段
+                toggleNutritionFields();
             }
         }
 
@@ -2670,7 +2720,11 @@ function showModal(modalId) {
         function calculateNutritionEndDate() {
             const purchaseQuantity = parseInt(document.getElementById('new-nutrition-purchase-quantity').value);
             const takeQuantity = parseInt(document.getElementById('new-nutrition-take-quantity').value);
-            const dailyAmount = parseFloat(document.getElementById('new-nutrition-daily').value);
+            const nutritionType = document.getElementById('new-nutrition-type').value;
+            // 根据不同的用量类型获取对应的每日使用量
+            const dailyAmount = nutritionType === 'daily' 
+                ? parseFloat(document.getElementById('new-nutrition-daily').value)
+                : parseFloat(document.getElementById('new-nutrition-recommended').value);
             const date = document.getElementById('new-nutrition-date').value;
             
             if (!purchaseQuantity || !takeQuantity || !dailyAmount || !date) {
@@ -2678,7 +2732,7 @@ function showModal(modalId) {
                 return;
             }
             
-            // 使用拿走的数量计算预计用完时间
+            // 使用拿走的数量计算预计用完时间（假设每包是单位数量）
             const totalAmount = takeQuantity;
             const days = Math.floor(totalAmount / dailyAmount);
             
@@ -2829,14 +2883,18 @@ function showModal(modalId) {
             const name = document.getElementById('new-nutrition-name').value;
             const brand = document.getElementById('new-nutrition-brand').value;
             const nutritionType = document.getElementById('new-nutrition-type').value;
-            const dailyAmount = parseFloat(document.getElementById('new-nutrition-daily').value);
+            // 根据不同的用量类型获取对应的每日使用量
+            const dailyAmount = nutritionType === 'daily' 
+                ? parseFloat(document.getElementById('new-nutrition-daily').value)
+                : parseFloat(document.getElementById('new-nutrition-recommended').value);
             const purchaseQuantity = parseInt(document.getElementById('new-nutrition-purchase-quantity').value);
             const takeQuantity = parseInt(document.getElementById('new-nutrition-take-quantity').value);
             const date = document.getElementById('new-nutrition-date').value;
             const endDate = document.getElementById('new-nutrition-end-date').value;
             const needStorage = document.getElementById('new-nutrition-storage').checked;
             const storageQuantity = parseInt(document.getElementById('new-nutrition-storage-quantity').value) || 0;
-            const reminder = document.getElementById('nutrition-reminder').checked;
+            // 检查回访提醒元素是否存在
+            const reminder = document.getElementById('nutrition-reminder') ? document.getElementById('nutrition-reminder').checked : false;
             
             if (!name || !brand || !nutritionType || !dailyAmount || !purchaseQuantity || !takeQuantity || !date || !endDate) {
                 return null;
@@ -2870,6 +2928,8 @@ function showModal(modalId) {
             
             // 如果需要回访提醒，创建提醒记录
             if (reminder) {
+                // 从saveProductFromButton函数中获取customerId
+                const customerId = parseInt(document.getElementById('product-customer-select').value);
                 createNutritionReminders(product.id, customerId, date);
             }
             
@@ -3195,60 +3255,61 @@ function showModal(modalId) {
         function updateTodayReminders() {
             const list = document.getElementById('today-reminders-list');
             const today = new Date().toISOString().split('T')[0];
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
             const reminders = [];
+            const REMINDER_ADVANCE_DAYS = 7;
             
             // 检查已完成提醒，只保留今天完成的提醒，明天自动清理
-            // 为了实现这个功能，我们需要存储每个提醒的完成日期
-            // 先获取昨天的日期字符串，用于比较
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toISOString().split('T')[0];
             
-            // 创建一个映射来存储提醒ID和完成日期
-            // 检查是否已有完成日期映射，如果没有则初始化
             if (!localStorage.motherBabyReminderCompletionDates) {
                 localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
             }
-            
-            // 获取完成日期映射
             const completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
+            window.completionDates = completionDates; // 保存到全局变量以便在markReminderAsCompleted函数中使用
             
-            // 过滤已完成提醒列表，只保留今天完成的提醒
-            const todayCompletedReminders = completedReminders.filter(reminderId => {
-                // 如果没有完成日期记录或者完成日期是今天，则保留
-                return !completionDates[reminderId] || completionDates[reminderId] === today;
+            // 保留所有已完成的提醒
+            // 从localStorage中获取所有已完成的提醒ID
+            const allCompletedReminderIds = Object.keys(completionDates);
+            // 更新completedReminders数组，确保它包含所有已完成的提醒
+            allCompletedReminderIds.forEach(reminderId => {
+                if (!completedReminders.includes(reminderId)) {
+                    completedReminders.push(reminderId);
+                }
             });
-            
-            // 如果已完成列表发生变化，更新并保存
-            if (todayCompletedReminders.length !== completedReminders.length) {
-                completedReminders = todayCompletedReminders;
-                console.log('清理了昨天完成的提醒，今天标记完成的会保留到明天');
-                saveData();
-            }
-            
-            console.log('已完成提醒管理：今天标记完成的会保留到明天');
+            // 移除已不存在于completionDates中的提醒ID
+            completedReminders = completedReminders.filter(reminderId => {
+                return allCompletedReminderIds.includes(reminderId);
+            });
+            // 保存更新后的completedReminders数组
+            saveData();
             
             customers.forEach(customer => {
-                // 产品到期提醒 - 保留过期未完成的提醒
+                // 1. 产品到期提醒 - 提前7天提醒
                 if (customer.products) {
                     customer.products.forEach(product => {
                         if (product.endDate) {
                             const endDate = new Date(product.endDate);
                             const todayDate = new Date(today);
-                            const daysDiff = Math.ceil((endDate - todayDate) / (1000 * 60 * 60 * 24));
+                            const daysLeft = Math.ceil((endDate - todayDate) / (1000 * 60 * 60 * 24));
                             const reminderId = `product-${product.id}`;
                             const isCompleted = completedReminders.includes(reminderId);
                             
-                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
-                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
+                            // 提前7天提醒，包括当天
+                            if ((!isCompleted && daysLeft >= 0 && daysLeft <= REMINDER_ADVANCE_DAYS) || 
+                                (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'product',
                                     customer: customer,
-                                    title: `${customer.name}的${getProductTypeName(product.type)}${daysDiff < 0 ? '已过期' : '即将用完'}`,
-                                    description: `${product.brand}${product.name}已于${Math.abs(daysDiff)}天前过期`,
+                                    product: product,
+                                    title: `${customer.name}的${getProductTypeName(product.type)}${daysLeft === 0 ? '今天过期' : '即将过期'}`,
+                                    description: `${product.brand}${product.name}${daysLeft === 0 ? '今天过期' : `还有${daysLeft}天过期`}`,
                                     date: product.endDate,
-                                    daysLeft: daysDiff
+                                    daysLeft: daysLeft
                                 });
                             }
                         }
@@ -3266,8 +3327,8 @@ function showModal(modalId) {
                             const isToday = contactDate === today;
                             const isPast = contactDate < today;
                             
-                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
-                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
+                            // 只显示今天的未完成提醒和今天完成的提醒
+                            if ((!isCompleted && isToday) || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'contact',
@@ -3280,7 +3341,7 @@ function showModal(modalId) {
                             }
                         }
                         
-                        // 回访提醒 - 保留过期未完成的提醒
+                        // 回访提醒 - 只显示今天或过期的未完成提醒，已完成提醒只显示当天
                         if (contact.type === 'follow_up_reminder') {
                             const contactDate = contact.date.split('T')[0];
                             const reminderId = `followup-${contact.id}`;
@@ -3288,8 +3349,10 @@ function showModal(modalId) {
                             const isToday = contactDate === today;
                             const isPast = contactDate < today;
                             
-                            // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
-                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
+                            // 显示条件：
+                            // 1. 未完成的今天提醒
+                            // 2. 已完成的今天提醒
+                            if ((!isCompleted && isToday) || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'followup',
@@ -3304,15 +3367,17 @@ function showModal(modalId) {
                     });
                 }
                 
-                // 预产期提醒 - 保留过期未完成的提醒
+                // 预产期提醒 - 只在当月提醒
                 if (customer.dueDate) {
                     const dueDate = new Date(customer.dueDate);
+                    const todayDate = new Date();
+                    const isCurrentMonth = dueDate.getFullYear() === todayDate.getFullYear() && dueDate.getMonth() === todayDate.getMonth();
                     const daysDiff = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
                     const reminderId = `due-${customer.id}`;
                     const isCompleted = completedReminders.includes(reminderId);
                     
-                    // 未完成的提醒一直显示，直到完成；已完成的提醒只在当天显示
-                            if (!isCompleted || (isCompleted && completionDates[reminderId] === today)) {
+                    // 只显示当月未过期的未完成提醒和今天完成的提醒
+                    if ((isCurrentMonth && !isCompleted && daysDiff >= 0) || (isCompleted && completionDates[reminderId] === today)) {
                         reminders.push({
                             id: reminderId,
                             type: 'due',
@@ -3362,16 +3427,8 @@ function showModal(modalId) {
                 }
             });
             
-            // 按剩余天数排序，过期未完成的提醒显示在最前面
+            // 按剩余天数排序，今天的提醒显示在前面
             reminders.sort((a, b) => {
-                // 首先按是否过期排序，过期的提醒显示在前面
-                if ((a.daysLeft < 0) !== (b.daysLeft < 0)) {
-                    return a.daysLeft < 0 ? -1 : 1;
-                }
-                // 对于都是过期的提醒，按过期时间长短排序，过期时间越长（天数越小）的显示在越前面
-                if (a.daysLeft < 0 && b.daysLeft < 0) {
-                    return a.daysLeft - b.daysLeft;
-                }
                 // 对于都是未过期的提醒，按剩余天数排序
                 if (a.daysLeft !== b.daysLeft) {
                     return a.daysLeft - b.daysLeft;
@@ -3392,9 +3449,200 @@ function showModal(modalId) {
                 return;
             }
             
-            list.innerHTML = reminders.map(reminder => {
-                const isCompleted = completedReminders.includes(reminder.id);
-                const reminderClass = isCompleted ? 'bg-gray-100 opacity-70' : reminder.daysLeft === 0 ? 'bg-red-50 border-red-200' : reminder.daysLeft <= 3 ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200';
+            // 将提醒均匀分配到3个区块，在大屏幕上显示为3列
+            const chunks = [[], [], []];
+            reminders.forEach((reminder, index) => {
+                chunks[index % 3].push(reminder);
+            });
+            
+            list.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    ${chunks.map(chunk => `
+                        <div class="space-y-4">
+                            ${chunk.map(reminder => {
+                                const isCompleted = completedReminders.includes(reminder.id);
+                                const reminderClass = isCompleted ? 'bg-gray-100 opacity-70' : reminder.daysLeft === 0 ? 'bg-red-50 border-red-200' : reminder.daysLeft <= 3 ? 'bg-orange-50 border-orange-200' : 'bg-blue-50 border-blue-200';
+                                let iconClass;
+                                if (reminder.type === 'product') iconClass = 'fa-shopping-cart';
+                                else if (reminder.type === 'contact') iconClass = 'fa-phone';
+                                else if (reminder.type === 'followup') iconClass = 'fa-comments';
+                                else if (reminder.type === 'storage') iconClass = 'fa-archive';
+                                else iconClass = 'fa-calendar';
+                                
+                                return `
+                                    <div class="p-4 rounded-lg border ${reminderClass}" data-id="${reminder.id}">
+                                        <div class="flex justify-between items-start mb-2">
+                                            <div class="flex items-center space-x-3">
+                                                <i class="fa ${iconClass} text-lg ${isCompleted ? 'text-gray-400' : reminder.daysLeft === 0 ? 'text-red-500' : reminder.daysLeft <= 3 ? 'text-orange-500' : 'text-blue-500'}"></i>
+                                                <div>
+                                                    <h4 class="font-medium ${isCompleted ? 'text-gray-600 line-through' : 'text-gray-900'}">${reminder.title}</h4>
+                                                    <p class="text-sm text-gray-600">${reminder.description}</p>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="markReminderAsCompleted('${reminder.id}')" class="p-2 text-gray-400 hover:text-green-500 transition-colors">
+                                                    <i class="fa ${isCompleted ? 'fa-check-circle text-green-500' : 'fa-circle-o'}"></i>
+                                                </button>
+                                                <button onclick="showCustomerDetail(${reminder.customer.id})" class="p-2 text-gray-400 hover:text-blue-500 transition-colors">
+                                                    <i class="fa fa-info-circle"></i>
+                                                </button>
+                                                <button onclick="editReminder('${reminder.id}')" class="p-2 text-gray-400 hover:text-yellow-500 transition-colors">
+                                                    <i class="fa fa-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `.trim();
+                            }).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 更新历史提醒列表
+        function updateHistoricalReminders() {
+            const list = document.getElementById('historical-reminders-list');
+            if (!list) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const historical = [];
+            // 获取提醒完成日期记录
+            const completionDates = JSON.parse(localStorage.getItem('motherBabyReminderCompletionDates') || '{}');
+            
+            customers.forEach(customer => {
+                // 产品到期提醒 - 收集过期未完成的提醒
+                if (customer.products) {
+                    customer.products.forEach(product => {
+                        if (product.endDate) {
+                            const endDate = new Date(product.endDate);
+                            const todayDate = new Date(today);
+                            const reminderId = `product-${product.id}`;
+                            const isCompleted = completionDates[reminderId] !== undefined;
+                            
+                            // 只显示过期未完成的提醒
+                            if (endDate < todayDate && !isCompleted) {
+                                historical.push({
+                                    id: reminderId,
+                                    type: 'product',
+                                    customer: customer,
+                                    title: `${customer.name}的${getProductTypeName(product.type)}已过期`,
+                                    description: `${product.brand}${product.name}已于${endDate.toLocaleDateString()}过期`,
+                                    date: product.endDate,
+                                    daysLeft: Math.ceil((endDate - todayDate) / (1000 * 60 * 60 * 24))
+                                });
+                            }
+                        }
+                    });
+                }
+                
+                // 联系记录提醒 - 收集过期未完成的提醒
+                if (customer.contacts) {
+                    customer.contacts.forEach(contact => {
+                        if (contact.nextContactDate) {
+                            const contactDate = new Date(contact.nextContactDate);
+                            const todayDate = new Date(today);
+                            const reminderId = `contact-${contact.id}`;
+                            const isCompleted = completionDates[reminderId] !== undefined;
+                            
+                            // 只显示过期未完成的提醒
+                            if (contactDate < todayDate && !isCompleted) {
+                                historical.push({
+                                    id: reminderId,
+                                    type: 'contact',
+                                    customer: customer,
+                                    title: `需要联系${customer.name}（已过期）`,
+                                    description: `上次联系结果：${contact.result}`,
+                                    date: contact.nextContactDate,
+                                    daysLeft: Math.ceil((contactDate - todayDate) / (1000 * 60 * 60 * 24))
+                                });
+                            }
+                        }
+                        
+                        // 回访提醒 - 收集过期未完成的提醒
+                        if (contact.type === 'follow_up_reminder') {
+                            const contactDate = new Date(contact.date);
+                            const todayDate = new Date(today);
+                            const reminderId = `followup-${contact.id}`;
+                            const isCompleted = completionDates[reminderId] !== undefined;
+                            
+                            // 只显示过期未完成的提醒
+                            if (contactDate < todayDate && !isCompleted) {
+                                historical.push({
+                                    id: reminderId,
+                                    type: 'followup',
+                                    customer: customer,
+                                    title: `${customer.name}的定期回访提醒（已过期）`,
+                                    description: contact.remark,
+                                    date: contact.date,
+                                    daysLeft: Math.ceil((contactDate - todayDate) / (1000 * 60 * 60 * 24))
+                                });
+                            }
+                        }
+                    });
+                }
+                
+                // 预产期提醒 - 收集过期未完成的提醒
+                if (customer.dueDate) {
+                    const dueDate = new Date(customer.dueDate);
+                    const todayDate = new Date(today);
+                    const reminderId = `due-${customer.id}`;
+                    const isCompleted = completionDates[reminderId] !== undefined;
+                            
+                            // 只显示过期未完成的提醒
+                            if (dueDate < todayDate && !isCompleted) {
+                        historical.push({
+                            id: reminderId,
+                            type: 'due',
+                            customer: customer,
+                            title: `${customer.name}的预产期提醒（已过期）`,
+                            description: `预产期${dueDate.toLocaleDateString()}`,
+                            date: customer.dueDate,
+                            daysLeft: Math.ceil((dueDate - todayDate) / (1000 * 60 * 60 * 24))
+                        });
+                    }
+                }
+            });
+            
+            // 寄存产品预计取货提醒 - 收集过期未完成的提醒
+            storageRecords.forEach(record => {
+                const customer = customers.find(c => c.id === record.customerId);
+                if (!customer) return;
+                
+                if (record.expectedPickupDates) {
+                    record.expectedPickupDates.forEach(date => {
+                        const pickupDate = new Date(date);
+                        const todayDate = new Date(today);
+                        const reminderId = `storage-${record.id}-${date}`;
+                        const isCompleted = completionDates[reminderId] !== undefined;
+                            
+                            // 只显示过期未完成的提醒
+                            if (pickupDate < todayDate && !isCompleted) {
+                            historical.push({
+                                id: reminderId,
+                                type: 'storage',
+                                customer: customer,
+                                title: `${customer.name}的寄存${record.productName}预计取货提醒（已过期）`,
+                                description: `预计取货日期：${date}`,
+                                date: date,
+                                daysLeft: Math.ceil((pickupDate - todayDate) / (1000 * 60 * 60 * 24))
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 按日期倒序排序，最新过期的显示在前面
+            historical.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if (historical.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center py-8">暂无历史提醒</p>';
+                return;
+            }
+            
+            list.innerHTML = historical.map(reminder => {
+                const isCompleted = completionDates[reminder.id] !== undefined;
+                const reminderClass = isCompleted ? 'bg-gray-100 opacity-70' : 'bg-yellow-50 border-yellow-200';
                 let iconClass;
                 if (reminder.type === 'product') iconClass = 'fa-shopping-cart';
                 else if (reminder.type === 'contact') iconClass = 'fa-phone';
@@ -3406,10 +3654,11 @@ function showModal(modalId) {
                     <div class="p-4 rounded-lg border ${reminderClass}" data-id="${reminder.id}">
                         <div class="flex justify-between items-start mb-2">
                             <div class="flex items-center space-x-3">
-                                <i class="fa ${iconClass} text-lg ${isCompleted ? 'text-gray-400' : reminder.daysLeft === 0 ? 'text-red-500' : reminder.daysLeft <= 3 ? 'text-orange-500' : 'text-blue-500'}"></i>
+                                <i class="fa ${iconClass} text-lg text-yellow-500"></i>
                                 <div>
-                                    <h4 class="font-medium ${isCompleted ? 'text-gray-600 line-through' : 'text-gray-900'}">${reminder.title}</h4>
+                                    <h4 class="font-medium text-gray-900">${reminder.title}</h4>
                                     <p class="text-sm text-gray-600">${reminder.description}</p>
+                                    <p class="text-xs text-gray-400 mt-1">过期时间：${new Date(reminder.date).toLocaleDateString()}</p>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
@@ -3515,11 +3764,15 @@ function showModal(modalId) {
             // 获取当前日期作为完成日期
             const todayStr = new Date().toISOString().split('T')[0];
             
-            // 确保完成日期映射存在
-            if (!localStorage.motherBabyReminderCompletionDates) {
-                localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
+            // 确保全局completionDates对象存在
+            if (!window.completionDates) {
+                // 如果不存在，从localStorage初始化
+                if (!localStorage.motherBabyReminderCompletionDates) {
+                    localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
+                }
+                window.completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
             }
-            const completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
+            const completionDates = window.completionDates;
             
             if (index === -1) {
                 completedReminders.push(reminderId);
@@ -3556,6 +3809,77 @@ function showModal(modalId) {
                     }
                 }
             }
+            
+            // 更新关联提醒的状态（联动功能）
+            if (reminderId.startsWith('followup-')) {
+                // 回访提醒
+                const contactId = parseInt(reminderId.split('-')[1]);
+                // 查找对应的联系人记录
+                customers.forEach(customer => {
+                    customer.contacts.forEach(contact => {
+                        if (contact.id === contactId && contact.type === 'follow_up_reminder') {
+                            // 更新联系人记录的状态
+                            contact.result = index === -1 ? '已完成' : '待处理';
+                            console.log('更新了回访提醒的状态:', contact.result);
+                            return;
+                        }
+                    });
+                });
+            } else if (reminderId.startsWith('contact-')) {
+                // 联系记录提醒
+                const contactId = parseInt(reminderId.split('-')[1]);
+                // 查找对应的联系人记录
+                customers.forEach(customer => {
+                    customer.contacts.forEach(contact => {
+                        if (contact.id === contactId) {
+                            // 更新联系人记录的状态
+                            contact.result = index === -1 ? '已完成' : '需要回访';
+                            console.log('更新了联系记录的状态:', contact.result);
+                            return;
+                        }
+                    });
+                });
+            } else if (reminderId.startsWith('product-')) {
+                // 产品到期提醒
+                const productId = parseInt(reminderId.split('-')[1]);
+                // 查找对应的产品记录
+                customers.forEach(customer => {
+                    if (customer.products) {
+                        customer.products.forEach(product => {
+                            if (product.id === productId) {
+                                // 更新产品的状态
+                                product.status = index === -1 ? '已完成' : '使用中';
+                                console.log('更新了产品的状态:', product.status);
+                                return;
+                            }
+                        });
+                    }
+                });
+            } else if (reminderId.startsWith('due-')) {
+                // 预产期提醒
+                const customerId = parseInt(reminderId.split('-')[1]);
+                // 查找对应的客户
+                const customer = customers.find(c => c.id === customerId);
+                if (customer) {
+                    // 更新客户的状态
+                    customer.status = index === -1 ? '已完成' : customer.status;
+                    console.log('更新了客户的状态:', customer.status);
+                }
+            } else if (reminderId.startsWith('storage-')) {
+                // 寄存产品预计取货提醒
+                const parts = reminderId.split('-');
+                const storageId = parseInt(parts[1]);
+                const pickupDate = parts[2];
+                // 查找对应的寄存记录
+                storageRecords.forEach(record => {
+                    if (record.id === storageId) {
+                        // 更新寄存记录的状态
+                        record.status = index === -1 ? '已完成' : '待处理';
+                        console.log('更新了寄存记录的状态:', record.status);
+                        return;
+                    }
+                });
+            }
             console.log('调用后completedReminders:', completedReminders);
             
             // 保存完成日期映射
@@ -3569,13 +3893,14 @@ function showModal(modalId) {
                 // 再次确认completedReminders数组已更新
                 console.log('调用updateTodayReminders前的completedReminders:', completedReminders);
                 updateTodayReminders();
+                updateHistoricalReminders(); // 更新历史提醒
             }, 500);
         }
 
         // 过滤提醒
         function filterReminders() {
             const filter = document.getElementById('reminder-filter').value;
-            const reminders = document.querySelectorAll('#today-reminders-list > div');
+            const reminders = document.querySelectorAll('#today-reminders-list [data-id]');
             
             reminders.forEach(reminder => {
                 // 从data-id属性获取提醒ID
