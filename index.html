@@ -3391,7 +3391,7 @@ function showModal(modalId) {
                                     title: `${customer.name}的定期回访提醒`,
                                     description: contact.remark,
                                     date: contact.date,
-                                    daysLeft: isToday ? 0 : isPast ? -1 : 1
+                                    daysLeft: contactDate === today ? 0 : 1
                                 });
                             }
                         }
