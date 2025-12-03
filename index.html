@@ -3292,7 +3292,8 @@ function showModal(modalId) {
             const currentMonth = new Date().getMonth();
             const currentYear = new Date().getFullYear();
             const reminders = [];
-            const REMINDER_ADVANCE_DAYS = 7;
+            const REMINDER_ADVANCE_DAYS = 7; // 产品到期提醒提前天数
+            const PICKUP_REMINDER_DAYS = 14; // 预计取货提醒提前天数
             
             // 检查已完成提醒，只保留今天完成的提醒，明天自动清理
             const yesterday = new Date();
@@ -3379,11 +3380,9 @@ function showModal(modalId) {
                             const contactDate = contact.date.split('T')[0];
                             const reminderId = `followup-${contact.id}`;
                             const isCompleted = completedReminders.includes(reminderId);
-                            const contactDateObj = new Date(contactDate);
-                            const todayDate = new Date(today);
                             
-                            // 只显示未过期的提醒（包括今天）和今天完成的提醒
-                            if ((!isCompleted && contactDateObj >= todayDate) || (isCompleted && completionDates[reminderId] === today)) {
+                            // 只显示当天的回访提醒（包括已完成的和未完成的）
+                            if ((contactDate === today && !isCompleted) || (isCompleted && completionDates[reminderId] === today)) {
                                 reminders.push({
                                     id: reminderId,
                                     type: 'followup',
@@ -3391,7 +3390,7 @@ function showModal(modalId) {
                                     title: `${customer.name}的定期回访提醒`,
                                     description: contact.remark,
                                     date: contact.date,
-                                    daysLeft: contactDate === today ? 0 : 1
+                                    daysLeft: 0
                                 });
                             }
                         }
@@ -3434,9 +3433,9 @@ function showModal(modalId) {
                         const pickupDate = new Date(date);
                         const todayDate = new Date(today);
                         const daysLeft = Math.ceil((pickupDate - todayDate) / (1000 * 60 * 60 * 24));
-                        
-                        // 只处理未来7天内的提醒（包括今天）
-                        if (daysLeft >= 0 && daysLeft <= REMINDER_ADVANCE_DAYS) {
+                         
+                        // 只处理未来14天内的提醒（包括今天）
+                        if (daysLeft >= 0 && daysLeft <= PICKUP_REMINDER_DAYS) {
                             // 生成唯一的提醒ID
                             const reminderId = `storage-${record.id}-${date}`;
                             const isCompleted = completedReminders.includes(reminderId);
@@ -3792,6 +3791,7 @@ function showModal(modalId) {
             
             console.log('调用前completedReminders:', completedReminders);
             const index = completedReminders.indexOf(reminderId);
+            const wasCompleted = index !== -1;
             // 获取当前日期作为完成日期
             const todayStr = new Date().toISOString().split('T')[0];
             
@@ -3805,7 +3805,7 @@ function showModal(modalId) {
             }
             const completionDates = window.completionDates;
             
-            if (index === -1) {
+            if (!wasCompleted) {
                 completedReminders.push(reminderId);
                 // 保存完成日期
                 completionDates[reminderId] = todayStr;
@@ -3850,7 +3850,7 @@ function showModal(modalId) {
                     customer.contacts.forEach(contact => {
                         if (contact.id === contactId && contact.type === 'follow_up_reminder') {
                             // 更新联系人记录的状态
-                            contact.result = index === -1 ? '已完成' : '待处理';
+                            contact.result = !wasCompleted ? '已完成' : '待处理';
                             console.log('更新了回访提醒的状态:', contact.result);
                             return;
                         }
@@ -3864,7 +3864,7 @@ function showModal(modalId) {
                     customer.contacts.forEach(contact => {
                         if (contact.id === contactId) {
                             // 更新联系人记录的状态
-                            contact.result = index === -1 ? '已完成' : '需要回访';
+                            contact.result = !wasCompleted ? '已完成' : '需要回访';
                             console.log('更新了联系记录的状态:', contact.result);
                             return;
                         }
@@ -3879,7 +3879,7 @@ function showModal(modalId) {
                         customer.products.forEach(product => {
                             if (product.id === productId) {
                                 // 更新产品的状态
-                                product.status = index === -1 ? '已完成' : '使用中';
+                                product.status = !wasCompleted ? '已完成' : '使用中';
                                 console.log('更新了产品的状态:', product.status);
                                 return;
                             }
@@ -3893,7 +3893,7 @@ function showModal(modalId) {
                 const customer = customers.find(c => c.id === customerId);
                 if (customer) {
                     // 更新客户的状态
-                    customer.status = index === -1 ? '已完成' : customer.status;
+                    customer.status = !wasCompleted ? '已完成' : customer.status;
                     console.log('更新了客户的状态:', customer.status);
                 }
             } else if (reminderId.startsWith('storage-')) {
@@ -3905,7 +3905,7 @@ function showModal(modalId) {
                 storageRecords.forEach(record => {
                     if (record.id === storageId) {
                         // 更新寄存记录的状态
-                        record.status = index === -1 ? '已完成' : '待处理';
+                        record.status = !wasCompleted ? '已完成' : '待处理';
                         console.log('更新了寄存记录的状态:', record.status);
                         return;
                     }
