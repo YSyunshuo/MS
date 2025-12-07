@@ -1495,6 +1495,12 @@
                         console.log('已完成提醒加载成功，共', completedReminders.length, '条记录');
                     }
                 }
+                
+                // 加载提醒完成日期记录
+                if (!localStorage.motherBabyReminderCompletionDates) {
+                    localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
+                }
+                window.completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
             } catch (error) {
                 console.error('加载数据失败:', error);
                 // 重置为默认值
@@ -3918,13 +3924,9 @@ function showModal(modalId) {
             saveData();
             updateDashboard();
             
-            // 延迟更长时间后更新整个提醒列表，确保状态完全保存并同步
-            setTimeout(() => {
-                // 再次确认completedReminders数组已更新
-                console.log('调用updateTodayReminders前的completedReminders:', completedReminders);
-                updateTodayReminders();
-                updateHistoricalReminders(); // 更新历史提醒
-            }, 500);
+            // 立即更新提醒列表，确保状态完全保存并同步
+            updateTodayReminders();
+            updateHistoricalReminders(); // 更新历史提醒
         }
 
         // 过滤提醒
