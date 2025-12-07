@@ -3296,28 +3296,28 @@ function showModal(modalId) {
             const PICKUP_REMINDER_DAYS = 14; // 预计取货提醒提前天数
             
             // 检查已完成提醒，只保留今天完成的提醒，明天自动清理
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            const todayStr = new Date().toISOString().split('T')[0];
             
             if (!localStorage.motherBabyReminderCompletionDates) {
                 localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
             }
-            const completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
+            let completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
+            
+            // 实际清理旧的完成记录，只保留今天完成的提醒
+            for (const reminderId in completionDates) {
+                if (completionDates[reminderId] !== todayStr) {
+                    delete completionDates[reminderId];
+                }
+            }
+            
+            // 将清理后的completionDates保存回localStorage
+            localStorage.setItem('motherBabyReminderCompletionDates', JSON.stringify(completionDates));
             window.completionDates = completionDates; // 保存到全局变量以便在markReminderAsCompleted函数中使用
             
             // 从localStorage中获取所有已完成的提醒ID
             const allCompletedReminderIds = Object.keys(completionDates);
-            // 更新completedReminders数组，确保它包含所有已完成的提醒
-            allCompletedReminderIds.forEach(reminderId => {
-                if (!completedReminders.includes(reminderId)) {
-                    completedReminders.push(reminderId);
-                }
-            });
-            // 移除已不存在于completionDates中的提醒ID
-            completedReminders = completedReminders.filter(reminderId => {
-                return allCompletedReminderIds.includes(reminderId);
-            });
+            // 更新completedReminders数组，只包含今天完成的提醒
+            completedReminders = allCompletedReminderIds;
             // 保存更新后的completedReminders数组
             saveData();
             
