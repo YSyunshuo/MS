@@ -508,13 +508,6 @@
                                 <option value="是">是</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">客户删我</label>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="edit-customer-blocked" class="w-4 h-4 text-red-600 rounded focus:ring-red-500">
-                                <label for="edit-customer-blocked" class="ml-2 text-sm text-gray-700">标记为客户删我</label>
-                            </div>
-                        </div>
                     </div>
                     
                     <div id="edit-allergy-info-container" class="mb-6 hidden">
@@ -1688,7 +1681,6 @@ function showModal(modalId) {
                 status: document.getElementById('new-customer-status').value,
                 allergic: document.getElementById('new-customer-allergic').value,
                 allergyInfo: document.getElementById('new-customer-allergy-info').value,
-                isBlocked: false,
                 babies: [],
                 products: [],
                 contacts: [],
@@ -1828,21 +1820,14 @@ function showModal(modalId) {
             }
 
             list.innerHTML = filteredCustomers.map(customer => `
-                <div class="${customer.isBlocked ? 'bg-red-50 border-2 border-red-200' : 'bg-white border border-gray-200'} rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer slide-in" onclick="showCustomerDetail(${customer.id})">
+                <div class="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer slide-in" onclick="showCustomerDetail(${customer.id})">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-900">${customer.name}</h3>
                             <p class="text-sm text-gray-600">${customer.phone} | ${customer.owner}</p>
                             <p class="text-sm text-gray-600">${customer.identity || '未填写'}</p>
                         </div>
-                        <div class="flex flex-col items-end space-y-1">
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(customer.status)}">${customer.status}</span>
-                            ${customer.isBlocked ? `
-                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-600 text-white">
-                                    <i class="fa fa-user-times mr-1"></i>客户删我
-                                </span>
-                            ` : ''}
-                        </div>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(customer.status)}">${customer.status}</span>
                     </div>
                     
                     ${customer.allergic === '是' ? `
@@ -1928,12 +1913,6 @@ function showModal(modalId) {
                             <div>
                                 <p class="text-sm text-gray-600">客户状态</p>
                                 <p class="font-medium ${getStatusBadgeClass(customer.status)}">${customer.status}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-600">客户删我</p>
-                                <p class="font-medium ${customer.isBlocked ? 'text-red-600' : 'text-gray-500'}">
-                                    ${customer.isBlocked ? '是' : '否'}
-                                </p>
                             </div>
                             <div>
                                 <p class="text-sm text-gray-600">创建时间</p>
@@ -2371,7 +2350,6 @@ function showModal(modalId) {
             document.getElementById('edit-customer-due-date').value = customer.dueDate || '';
             document.getElementById('edit-customer-status').value = customer.status;
             document.getElementById('edit-customer-allergic').value = customer.allergic;
-            document.getElementById('edit-customer-blocked').checked = customer.isBlocked || false;
             document.getElementById('edit-customer-allergy-info').value = customer.allergyInfo || '';
             
             // 宝宝信息
@@ -2540,7 +2518,6 @@ function showModal(modalId) {
             customer.status = document.getElementById('edit-customer-status').value;
             customer.allergic = document.getElementById('edit-customer-allergic').value;
             customer.allergyInfo = document.getElementById('edit-customer-allergy-info').value;
-            customer.isBlocked = document.getElementById('edit-customer-blocked').checked;
             customer.updatedAt = new Date().toISOString();
             
             // 更新宝宝信息
