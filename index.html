@@ -3727,8 +3727,7 @@ function showModal(modalId) {
         // 生成客户回访计划
         function generateFollowUpPlan(customerId) {
             const customer = customers.find(c => c.id === customerId);
-            // 如果客户被标记为"客户删我"，则不生成普通回访提醒
-            if (!customer || !customer.followUpSettings || !customer.followUpSettings.enabled || customer.isBlocked) {
+            if (!customer || !customer.followUpSettings || !customer.followUpSettings.enabled) {
                 return;
             }
             
@@ -3741,17 +3740,12 @@ function showModal(modalId) {
                 contact.type !== 'follow_up_reminder'
             );
             
-            const timesPerWeek = 2; // 固定为每周两次
-            // 设置为当月第一天开始
+            const timesPerWeek = Math.min(Math.max(customer.followUpSettings.timesPerWeek, 1), 2); // 确保在1-2次范围内
             const startDate = new Date(customer.followUpSettings.nextFollowUpDate || new Date());
-            startDate.setDate(1);
-            
-            // 计算当月最后一天
-            const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
             const reminders = [];
             
-            // 生成从当月第一天到最后一天的回访计划
-            let currentDate = new Date(startDate);
+            // 生成未来30天的回访计划
+            for (let week = 0; week < 4; week++) { // 生成4周的计划
                 // 对于每周回访次数，随机分配天数，但保持从远到近的顺序
                 const daysInWeek = [];
                 if (timesPerWeek === 1) {
@@ -3793,129 +3787,11 @@ function showModal(modalId) {
             // 将生成的回访提醒添加到客户的联系记录中
             customer.contacts.push(...reminders);
             
-            // 更新下次回访日期为下个月的第一天
-            const nextMonthFirstDay = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 1);
-            customer.followUpSettings.nextFollowUpDate = nextMonthFirstDay.toISOString().split('T')[0];
-            
-            // 保存设置
-            saveData();
-        }
-
-        // 为客户删我标签的客户生成每月两次的回访提醒
-        function createMonthlyBlockedReminder(customerId) {
-            const customer = customers.find(c => c.id === customerId);
-            if (!customer) return;
-            
-            // 清除现有的回访提醒
-            customer.contacts = customer.contacts.filter(contact => 
-                contact.type !== 'reminder' || contact.remark !== '客户删我 - 月度回访'
-            );
-            
-            const reminders = [];
-            const startDate = new Date();
-            
-            // 生成未来3个月的每月两次提醒
-            for (let i = 0; i < 3; i++) {
-                // 每月10号和20号提醒
-                const reminderDate1 = new Date(startDate.getFullYear(), startDate.getMonth() + i, 10);
-                const reminderDate2 = new Date(startDate.getFullYear(), startDate.getMonth() + i, 20);
-                
-                reminders.push({
-                    id: Date.now() + i * 10 + 1,
-                    type: 'reminder',
-                    method: '回访提醒',
-                    result: '待处理',
-                    remark: '客户删我 - 月度回访',
-                    date: reminderDate1.toISOString().split('T')[0],
-                    nextContactDate: null
-                });
-                
-                reminders.push({
-                    id: Date.now() + i * 10 + 2,
-                    type: 'reminder',
-                    method: '回访提醒',
-                    result: '待处理',
-                    remark: '客户删我 - 月度回访',
-                    date: reminderDate2.toISOString().split('T')[0],
-                    nextContactDate: null
-                });
-            }
-            
-            // 将提醒添加到客户的联系记录中
-            customer.contacts.push(...reminders);
-        }
-        
-        // 每月最后一天检查并生成下个月的回访计划
-        function monthlyEndCheck() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            
-            // 检查是否是当月最后一天
-            if (tomorrow.getDate() === 1) {
-                console.log('今天是当月最后一天，生成下个月回访计划...');
-                
-                // 为所有正常客户生成下个月的回访计划
-                customers.forEach(customer => {
-                    if (!customer.isBlocked && customer.followUpSettings && customer.followUpSettings.enabled) {
-                        // 设置下个月第一天为开始日期
-                        const nextMonthFirstDay = new Date(tomorrow);
-                        customer.followUpSettings.nextFollowUpDate = nextMonthFirstDay.toISOString().split('T')[0];
-                        
-                        // 生成下个月的回访计划
-                        generateFollowUpPlan(customer.id);
-                    } else if (customer.isBlocked) {
-                        // 为有删除标签的客户生成每月两次的回访提醒
-                        createMonthlyBlockedReminder(customer.id);
-                    }
-                });
-                
-                // 更新界面显示
-                updateTodayReminders();
-                updateHistoricalReminders();
+            // 更新下次回访日期为第一个提醒的日期
+            if (reminders.length > 0) {
+                customer.followUpSettings.nextFollowUpDate = reminders[0].date;
             }
         }
-        
-        // 切换客户删我状态
-        function toggleBlockedStatus(customerId, isBlocked) {
-            const customer = customers.find(c => c.id === customerId);
-            if (customer) {
-                customer.isBlocked = isBlocked;
-                
-                // 如果设置为客户删我，重新生成回访提醒为每月两次
-                if (isBlocked) {
-                    // 清除现有的回访提醒
-                    customer.contacts = customer.contacts.filter(contact => contact.type !== 'follow_up_reminder');
-                    
-                    // 生成每月两次的回访提醒
-                    createMonthlyBlockedReminder(customerId);
-                } else {
-                    // 如果取消客户删我，恢复正常的回访提醒
-                    generateFollowUpPlan(customerId);
-                }
-                
-                saveData();
-                
-                // 刷新客户详情
-                showCustomerDetail(customerId);
-                // 更新客户列表
-                updateCustomerList();
-            }
-        }
-        
-        // 添加每天检查的定时任务
-        function setupDailyReminderCheck() {
-            // 立即执行一次检查
-            monthlyEndCheck();
-            
-            // 设置每天检查一次（24小时）
-            setInterval(monthlyEndCheck, 24 * 60 * 60 * 1000);
-            
-            console.log('已设置每日回访提醒检查任务');
-        }
-        
-        // 在页面加载时设置定时任务
-        document.addEventListener('DOMContentLoaded', setupDailyReminderCheck);
 
         // 标记提醒为已完成
         function markReminderAsCompleted(reminderId) {
