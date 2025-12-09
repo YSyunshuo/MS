@@ -3866,7 +3866,7 @@ function showModal(modalId) {
                 contact.type !== 'follow_up_reminder'
             );
             
-            const timesPerWeek = Math.min(Math.max(customer.followUpSettings.timesPerWeek, 1), 2); // 确保在1-2次范围内
+            const timesPerWeek = 2; // 固定为每周两次
             const startDate = new Date(customer.followUpSettings.nextFollowUpDate || new Date());
             const reminders = [];
             
