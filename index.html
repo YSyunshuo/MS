@@ -22,7 +22,120 @@
                         info: '#0891b2',
                         light: '#f8fafc',
                         dark: '#1e293b'
-                    },
+                    }
+                }
+            }
+        };
+        
+        // 每月回访提醒检查和生成
+        function monthlyReminderCheck() {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            // 只有每月1号才执行生成操作
+            if (today.getDate() !== 1) {
+                return;
+            }
+            
+            console.log('执行每月回访提醒生成...');
+            
+            // 遍历所有客户
+            customers.forEach(customer => {
+                // 检查客户是否有启用的回访提醒设置
+                if (customer.reminderSettings && customer.reminderSettings.enabled) {
+                    // 检查是否已经为当前月生成过提醒
+                    if (customer.reminderSettings.lastGeneratedMonth !== currentMonth || 
+                        customer.reminderSettings.lastGeneratedYear !== currentYear) {
+                        
+                        // 为客户生成新的30天回访提醒
+                        const startDate = new Date();
+                        startDate.setDate(1); // 每月1号开始
+                        
+                        // 获取客户的第一个营养品产品（假设所有产品使用相同的回访规则）
+                        if (customer.products && customer.products.length > 0) {
+                            const product = customer.products[0];
+                            createMonthlyNutritionReminders(product.id, customer.id, startDate.toISOString().split('T')[0]);
+                        }
+                        
+                        // 更新最后生成月份和年份
+                        customer.reminderSettings.lastGeneratedMonth = currentMonth;
+                        customer.reminderSettings.lastGeneratedYear = currentYear;
+                    }
+                }
+            });
+            
+            // 更新界面显示
+            updateTodayReminders();
+            updateHistoricalReminders();
+        }
+        
+        // 创建月度营养品回访提醒（每月1号生成）
+        function createMonthlyNutritionReminders(productId, customerId, startDate) {
+            const start = new Date(startDate);
+            const reminders = [];
+            
+            // 前三天每天提醒
+            for (let i = 1; i <= 3; i++) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 第四天开始每三天提醒一次（到第10天）
+            for (let i = 4; i <= 10; i += 3) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 一周后（第14天）开始每周提醒一次，直至第30天
+            for (let i = 14; i <= 30; i += 7) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i + 100,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 将提醒添加到客户的联系记录中
+            const customer = customers.find(c => c.id === customerId);
+            if (customer && customer.contacts) {
+                reminders.forEach(reminder => {
+                    customer.contacts.push({
+                        id: reminder.id,
+                        type: 'reminder',
+                        method: '回访提醒',
+                        result: '待处理',
+                        remark: reminder.title,
+                        date: reminder.date,
+                        nextContactDate: null
+                    });
+                });
+            }
+        },
                     fontFamily: {
                         inter: ['Inter', 'sans-serif'],
                     },
@@ -1681,6 +1794,7 @@ function showModal(modalId) {
                 status: document.getElementById('new-customer-status').value,
                 allergic: document.getElementById('new-customer-allergic').value,
                 allergyInfo: document.getElementById('new-customer-allergy-info').value,
+                isBlocked: false, // 客户删我标签
                 babies: [],
                 products: [],
                 contacts: [],
@@ -1827,7 +1941,12 @@ function showModal(modalId) {
                             <p class="text-sm text-gray-600">${customer.phone} | ${customer.owner}</p>
                             <p class="text-sm text-gray-600">${customer.identity || '未填写'}</p>
                         </div>
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(customer.status)}">${customer.status}</span>
+                        <div class="flex flex-col items-end space-y-1">
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(customer.status)}">${customer.status}</span>
+                            ${customer.isBlocked ? `
+                                <span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">客户删我</span>
+                            ` : ''}
+                        </div>
                     </div>
                     
                     ${customer.allergic === '是' ? `
@@ -1917,6 +2036,16 @@ function showModal(modalId) {
                             <div>
                                 <p class="text-sm text-gray-600">创建时间</p>
                                 <p class="font-medium">${formatDate(customer.createdAt)}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">客户删我</p>
+                                <div class="flex items-center">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" ${customer.isBlocked ? 'checked' : ''} onchange="toggleBlockedStatus(${customer.id}, this.checked)">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                                        <span class="ml-3 text-sm font-medium text-gray-700">${customer.isBlocked ? '是' : '否'}</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
             `;
@@ -3040,6 +3169,16 @@ function showModal(modalId) {
                         nextContactDate: null
                     });
                 });
+                
+                // 记录回访提醒设置，用于后续每月自动生成
+                if (!customer.reminderSettings) {
+                    customer.reminderSettings = {
+                        enabled: true,
+                        startDate: startDate,
+                        lastGeneratedMonth: start.getMonth(),
+                        lastGeneratedYear: start.getFullYear()
+                    };
+                }
             }
         }
 
@@ -3713,7 +3852,8 @@ function showModal(modalId) {
         // 生成客户回访计划
         function generateFollowUpPlan(customerId) {
             const customer = customers.find(c => c.id === customerId);
-            if (!customer || !customer.followUpSettings || !customer.followUpSettings.enabled) {
+            // 如果客户被标记为"客户删我"，则不生成普通回访提醒
+            if (!customer || !customer.followUpSettings || !customer.followUpSettings.enabled || customer.isBlocked) {
                 return;
             }
             
@@ -3737,7 +3877,7 @@ function showModal(modalId) {
                 if (timesPerWeek === 1) {
                     // 每周随机选一天
                     daysInWeek.push(Math.floor(Math.random() * 7));
-                } else {
+                } else if (timesPerWeek === 2) {
                     // 每周随机选两天，且不相邻
                     let day1 = Math.floor(Math.random() * 7);
                     let day2;
@@ -3745,6 +3885,21 @@ function showModal(modalId) {
                         day2 = Math.floor(Math.random() * 7);
                     } while (Math.abs(day1 - day2) <= 1);
                     daysInWeek.push(Math.min(day1, day2), Math.max(day1, day2));
+                } else {
+                    // 每周随机选三天，且不相邻
+                    let day1, day2, day3;
+                    do {
+                        day1 = Math.floor(Math.random() * 7);
+                        do {
+                            day2 = Math.floor(Math.random() * 7);
+                        } while (Math.abs(day1 - day2) <= 1);
+                        do {
+                            day3 = Math.floor(Math.random() * 7);
+                        } while (Math.abs(day1 - day3) <= 1 || Math.abs(day2 - day3) <= 1);
+                    } while (day1 === day2 || day1 === day3 || day2 === day3);
+                    daysInWeek.push(Math.min(day1, day2, day3), 
+                                   (day1 + day2 + day3 - Math.min(day1, day2, day3) - Math.max(day1, day2, day3)), 
+                                   Math.max(day1, day2, day3));
                 }
                 
                 // 根据选定的天数生成回访日期
@@ -3773,10 +3928,15 @@ function showModal(modalId) {
             // 将生成的回访提醒添加到客户的联系记录中
             customer.contacts.push(...reminders);
             
-            // 更新下次回访日期为第一个提醒的日期
+            // 更新下次回访日期为最后一个提醒的日期之后的一天
             if (reminders.length > 0) {
-                customer.followUpSettings.nextFollowUpDate = reminders[0].date;
+                const lastReminderDate = new Date(reminders[reminders.length - 1].date);
+                lastReminderDate.setDate(lastReminderDate.getDate() + 1);
+                customer.followUpSettings.nextFollowUpDate = lastReminderDate.toISOString().split('T')[0];
             }
+            
+            // 保存设置，确保下次生成时使用正确的开始日期
+            saveData();
         }
 
         // 标记提醒为已完成
@@ -5576,6 +5736,60 @@ function showModal(modalId) {
                 default: return 'bg-gray-100 text-gray-800';
             }
         }
+        
+        // 切换客户删我状态
+        function toggleBlockedStatus(customerId, isBlocked) {
+            const customer = customers.find(c => c.id === customerId);
+            if (customer) {
+                customer.isBlocked = isBlocked;
+                
+                // 如果设置为客户删我，重新生成回访提醒为每月一次
+                if (isBlocked) {
+                    // 清除现有的回访提醒
+                    customer.contacts = customer.contacts.filter(contact => contact.type !== 'reminder');
+                    
+                    // 生成每月一次的回访提醒
+                    createMonthlyBlockedReminder(customerId);
+                } else {
+                    // 如果取消客户删我，恢复正常的回访提醒
+                    generateFollowUpPlan(customerId);
+                }
+                
+                saveData();
+                showNotification(`客户状态已更新为${isBlocked ? '客户删我' : '正常客户'}`, 'success');
+                
+                // 刷新客户详情
+                showCustomerDetail(customerId);
+                // 更新客户列表
+                updateCustomerList();
+            }
+        }
+        
+        // 为客户删我标签的客户生成每月一次的回访提醒
+        function createMonthlyBlockedReminder(customerId) {
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) return;
+            
+            const reminders = [];
+            const startDate = new Date();
+            
+            // 生成未来3个月的每月一次提醒
+            for (let i = 0; i < 3; i++) {
+                const reminderDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 15); // 每月15号提醒
+                reminders.push({
+                    id: Date.now() + i,
+                    type: 'reminder',
+                    method: '回访提醒',
+                    result: '待处理',
+                    remark: '客户删我 - 月度回访',
+                    date: reminderDate.toISOString().split('T')[0],
+                    nextContactDate: null
+                });
+            }
+            
+            // 将提醒添加到客户的联系记录中
+            customer.contacts.push(...reminders);
+        }
 
         // 显示通知
         function showNotification(message, type = 'info') {
@@ -5627,6 +5841,157 @@ function showModal(modalId) {
                 }
             });
         });
+        
+        // 每月回访提醒检查和生成
+        function monthlyReminderCheck() {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            // 只有每月1号才执行生成操作
+            if (today.getDate() !== 1) {
+                return;
+            }
+            
+            console.log('执行每月回访提醒生成...');
+            
+            // 遍历所有客户
+            customers.forEach(customer => {
+                // 检查客户是否有启用的回访提醒设置
+                if (customer.reminderSettings && customer.reminderSettings.enabled) {
+                    // 检查是否已经为当前月生成过提醒
+                    if (customer.reminderSettings.lastGeneratedMonth !== currentMonth || 
+                        customer.reminderSettings.lastGeneratedYear !== currentYear) {
+                        
+                        // 为客户生成新的30天回访提醒
+                        const startDate = new Date();
+                        startDate.setDate(1); // 每月1号开始
+                        
+                        // 获取客户的第一个营养品产品（假设所有产品使用相同的回访规则）
+                        if (customer.products && customer.products.length > 0) {
+                            const product = customer.products[0];
+                            createMonthlyNutritionReminders(product.id, customer.id, startDate.toISOString().split('T')[0]);
+                        }
+                        
+                        // 更新最后生成月份和年份
+                        customer.reminderSettings.lastGeneratedMonth = currentMonth;
+                        customer.reminderSettings.lastGeneratedYear = currentYear;
+                    }
+                }
+            });
+            
+            // 更新界面显示
+            updateTodayReminders();
+            updateHistoricalReminders();
+        }
+        
+        // 创建月度营养品回访提醒（每月1号生成）
+        function createMonthlyNutritionReminders(productId, customerId, startDate) {
+            const start = new Date(startDate);
+            const reminders = [];
+            
+            // 前三天每天提醒
+            for (let i = 1; i <= 3; i++) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 第四天开始每三天提醒一次（到第10天）
+            for (let i = 4; i <= 10; i += 3) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 一周后（第14天）开始每周提醒一次，直至第30天
+            for (let i = 14; i <= 30; i += 7) {
+                const reminderDate = new Date(start);
+                reminderDate.setDate(start.getDate() + i);
+                reminders.push({
+                    id: Date.now() + i + 100,
+                    type: 'nutrition',
+                    productId: productId,
+                    customerId: customerId,
+                    date: reminderDate.toISOString().split('T')[0],
+                    title: '营养品使用回访',
+                    completed: false
+                });
+            }
+            
+            // 将提醒添加到客户的联系记录中
+            const customer = customers.find(c => c.id === customerId);
+            if (customer && customer.contacts) {
+                reminders.forEach(reminder => {
+                    customer.contacts.push({
+                        id: reminder.id,
+                        type: 'reminder',
+                        method: '回访提醒',
+                        result: '待处理',
+                        remark: reminder.title,
+                        date: reminder.date,
+                        nextContactDate: null
+                    });
+                });
+            }
+        }
+        
+        // 检查并为所有客户生成回访提醒
+        function checkAndGenerateFollowUpPlans() {
+            console.log('执行回访提醒生成检查...');
+            
+            // 遍历所有客户
+            customers.forEach(customer => {
+                // 跳过被标记为"客户删我"的客户，他们使用不同的提醒规则
+                if (!customer.isBlocked && customer.followUpSettings && customer.followUpSettings.enabled) {
+                    // 检查是否需要生成新的回访提醒
+                    const today = new Date();
+                    const nextFollowUpDate = new Date(customer.followUpSettings.nextFollowUpDate || today);
+                    
+                    // 如果下次回访日期已经到来或过去，生成新的回访计划
+                    if (nextFollowUpDate <= today) {
+                        generateFollowUpPlan(customer.id);
+                    }
+                }
+            });
+            
+            // 更新界面显示
+            updateTodayReminders();
+            updateHistoricalReminders();
+        }
+        
+        // 添加每天检查的定时任务
+        function setupDailyReminderCheck() {
+            // 立即执行一次检查
+            monthlyReminderCheck();
+            checkAndGenerateFollowUpPlans();
+            
+            // 设置每天检查一次（24小时）
+            setInterval(monthlyReminderCheck, 24 * 60 * 60 * 1000);
+            // 设置每天检查并生成回访提醒（24小时）
+            setInterval(checkAndGenerateFollowUpPlans, 24 * 60 * 60 * 1000);
+            
+            console.log('已设置每日回访提醒检查任务');
+        }
+        
+        // 在页面加载时设置定时任务
+        document.addEventListener('DOMContentLoaded', setupDailyReminderCheck);
     </script>
 </body>
 </html>
