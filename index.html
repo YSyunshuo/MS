@@ -3741,12 +3741,17 @@ function showModal(modalId) {
                 contact.type !== 'follow_up_reminder'
             );
             
-            const timesPerWeek = Math.min(Math.max(customer.followUpSettings.timesPerWeek, 1), 2); // 确保在1-2次范围内
+            const timesPerWeek = 2; // 固定为每周两次
+            // 设置为当月第一天开始
             const startDate = new Date(customer.followUpSettings.nextFollowUpDate || new Date());
+            startDate.setDate(1);
+            
+            // 计算当月最后一天
+            const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
             const reminders = [];
             
-            // 生成未来30天的回访计划
-            for (let week = 0; week < 4; week++) { // 生成4周的计划
+            // 生成从当月第一天到最后一天的回访计划
+            let currentDate = new Date(startDate);
                 // 对于每周回访次数，随机分配天数，但保持从远到近的顺序
                 const daysInWeek = [];
                 if (timesPerWeek === 1) {
