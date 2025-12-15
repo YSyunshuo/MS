@@ -3451,31 +3451,25 @@ function showModal(modalId) {
             const REMINDER_ADVANCE_DAYS = 7; // 产品到期提醒提前天数
             const PICKUP_REMINDER_DAYS = 14; // 预计取货提醒提前天数
             
-            // 检查已完成提醒，只保留今天完成的提醒，明天自动清理
-            const todayStr = new Date().toISOString().split('T')[0];
-            
-            if (!localStorage.motherBabyReminderCompletionDates) {
-                localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
+            // 确保completionDates对象存在
+            if (!window.completionDates) {
+                if (!localStorage.motherBabyReminderCompletionDates) {
+                    localStorage.motherBabyReminderCompletionDates = JSON.stringify({});
+                }
+                window.completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
             }
-            let completionDates = JSON.parse(localStorage.motherBabyReminderCompletionDates);
+            const completionDates = window.completionDates;
             
-            // 实际清理旧的完成记录，只保留今天完成的提醒
-            for (const reminderId in completionDates) {
-                if (completionDates[reminderId] !== todayStr) {
-                    delete completionDates[reminderId];
+            // 确保completedReminders数组存在
+            if (!Array.isArray(completedReminders)) {
+                const savedCompleted = localStorage.getItem('motherBabyCompletedReminders');
+                if (savedCompleted) {
+                    const parsedCompleted = JSON.parse(savedCompleted);
+                    if (Array.isArray(parsedCompleted)) {
+                        completedReminders = parsedCompleted;
+                    }
                 }
             }
-            
-            // 将清理后的completionDates保存回localStorage
-            localStorage.setItem('motherBabyReminderCompletionDates', JSON.stringify(completionDates));
-            window.completionDates = completionDates; // 保存到全局变量以便在markReminderAsCompleted函数中使用
-            
-            // 从localStorage中获取所有已完成的提醒ID
-            const allCompletedReminderIds = Object.keys(completionDates);
-            // 更新completedReminders数组，只包含今天完成的提醒
-            completedReminders = allCompletedReminderIds;
-            // 保存更新后的completedReminders数组
-            saveData();
             
             customers.forEach(customer => {
                 // 1. 产品到期提醒 - 提前7天提醒
@@ -3692,8 +3686,17 @@ function showModal(modalId) {
             
             const today = new Date().toISOString().split('T')[0];
             const historical = [];
-            // 获取提醒完成日期记录
-            const completionDates = JSON.parse(localStorage.getItem('motherBabyReminderCompletionDates') || '{}');
+            
+            // 确保completedReminders数组存在
+            if (!Array.isArray(completedReminders)) {
+                const savedCompleted = localStorage.getItem('motherBabyCompletedReminders');
+                if (savedCompleted) {
+                    const parsedCompleted = JSON.parse(savedCompleted);
+                    if (Array.isArray(parsedCompleted)) {
+                        completedReminders = parsedCompleted;
+                    }
+                }
+            }
             
             customers.forEach(customer => {
                 // 产品到期提醒 - 收集过期未完成的提醒
@@ -3703,7 +3706,7 @@ function showModal(modalId) {
                             const endDate = new Date(product.endDate);
                             const todayDate = new Date(today);
                             const reminderId = `product-${product.id}`;
-                            const isCompleted = completionDates[reminderId] !== undefined;
+                            const isCompleted = completedReminders.includes(reminderId);
                             
                             // 只显示过期未完成的提醒
                             if (endDate < todayDate && !isCompleted) {
@@ -3728,7 +3731,7 @@ function showModal(modalId) {
                             const contactDate = new Date(contact.nextContactDate);
                             const todayDate = new Date(today);
                             const reminderId = `contact-${contact.id}`;
-                            const isCompleted = completionDates[reminderId] !== undefined;
+                            const isCompleted = completedReminders.includes(reminderId);
                             
                             // 只显示过期未完成的提醒
                             if (contactDate < todayDate && !isCompleted) {
@@ -3749,7 +3752,7 @@ function showModal(modalId) {
                             const contactDate = new Date(contact.date);
                             const todayDate = new Date(today);
                             const reminderId = `followup-${contact.id}`;
-                            const isCompleted = completionDates[reminderId] !== undefined;
+                            const isCompleted = completedReminders.includes(reminderId);
                             
                             // 只显示过期未完成的提醒
                             if (contactDate < todayDate && !isCompleted) {
@@ -3772,7 +3775,7 @@ function showModal(modalId) {
                     const dueDate = new Date(customer.dueDate);
                     const todayDate = new Date(today);
                     const reminderId = `due-${customer.id}`;
-                    const isCompleted = completionDates[reminderId] !== undefined;
+                    const isCompleted = completedReminders.includes(reminderId);
                             
                             // 只显示过期未完成的提醒
                             if (dueDate < todayDate && !isCompleted) {
@@ -3799,7 +3802,7 @@ function showModal(modalId) {
                         const pickupDate = new Date(date);
                         const todayDate = new Date(today);
                         const reminderId = `storage-${record.id}-${date}`;
-                        const isCompleted = completionDates[reminderId] !== undefined;
+                        const isCompleted = completedReminders.includes(reminderId);
                             
                             // 只显示过期未完成的提醒
                             if (pickupDate < todayDate && !isCompleted) {
@@ -3826,7 +3829,7 @@ function showModal(modalId) {
             }
             
             list.innerHTML = historical.map(reminder => {
-                const isCompleted = completionDates[reminder.id] !== undefined;
+                const isCompleted = completedReminders.includes(reminder.id);
                 const reminderClass = isCompleted ? 'bg-gray-100 opacity-70' : 'bg-yellow-50 border-yellow-200';
                 let iconClass;
                 if (reminder.type === 'product') iconClass = 'fa-shopping-cart';
